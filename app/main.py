@@ -1,40 +1,33 @@
 from fastapi import FastAPI
-from langchain.prompts import ChatPromptTemplate
-from langchain.chains import LLMChain
-
+from app.model import get_model
+from app.memory import get_checkpointer
+from app.agent import build_agent
 from app.schema import ChatRequest, ChatResponse
-from app.model import get_llm
-from app.memory import get_memory
+from app.prompts import load_system_prompt
 
-app = FastAPI(title="Speakeasy AI Chatbot")
+app = FastAPI()
 
-
-def load_system_prompt():
-    with open("prompts/system_prompt.txt") as f:
-        return f.read()
-
-
-SYSTEM_PROMPT = load_system_prompt()
+agent = build_agent(
+    model=get_model(),
+    checkpointer=get_checkpointer(),
+)
 
 
 @app.post("/chat", response_model=ChatResponse)
-def chat(req: ChatRequest):
+def chat(request: ChatRequest):
 
-    memory = get_memory(req.session_id)
+    config = {"configurable": {"thread_id": request.session_id}}
 
-    prompt = ChatPromptTemplate.from_messages([
-        ("system", SYSTEM_PROMPT),
-        ("human", "{input}")
-    ])
-
-    chain = LLMChain(
-        llm=get_llm(),
-        prompt=prompt,
-        memory=memory
+    response = agent.invoke(
+        {
+            "messages": [
+                {"role": "system", "content": load_system_prompt()},
+                {"role": "user", "content": request.message},
+            ]
+        },
+        config=config,
     )
 
-    result = chain.invoke({
-        "input": req.message
-    })
-
-    return ChatResponse(response=result["text"])
+    return ChatResponse(
+        message=response["messages"][-1].content
+    )

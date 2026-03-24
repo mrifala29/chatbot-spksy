@@ -1,11 +1,4 @@
-from langchain.memory import ConversationBufferMemory
+from langgraph.checkpoint.memory import InMemorySaver
 
-sessions = {}
-
-
-def get_memory(session_id: str):
-    if session_id not in sessions:
-        sessions[session_id] = ConversationBufferMemory(
-            return_messages=True
-        )
-    return sessions[session_id]
+def get_checkpointer():
+    return InMemorySaver()

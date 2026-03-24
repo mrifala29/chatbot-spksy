@@ -1,12 +1,13 @@
 import os
+
 from langchain_openai import ChatOpenAI
-from dotenv import load_dotenv
+from app.config import LLMSettings
 
-load_dotenv()
-
-
-def get_llm():
+def get_model():
     return ChatOpenAI(
-        model="gpt-4o-mini",
-        temperature=0.3
+        model=LLMSettings.llm_model,
+        api_key=LLMSettings.llm_api_key,
+        base_url=LLMSettings.llm_base_url,
+        temperature=LLMSettings.llm_temperature,
+        max_tokens=LLMSettings.llm_max_token,
     )
